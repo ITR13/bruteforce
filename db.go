@@ -35,15 +35,20 @@ type Database interface {
 	//  step = currentStep and exiting goes from false to true
 	//  step < currentStep and exiting is true
 	UpdateCurrentStep(step uint8, exiting bool)
-	// Should return minimum of a gamestate
+	//Should return minimum of a gamestate
 	GetStepsAndWinner(state *GameState) (uint8, Player)
-	// Set error
+	//Used to find out where something is amiss
 	SetError(state *GameState, err Error)
+	//Used to find out what tasks to do next
+	GetMetaData() MetaData
+	//Returns all gamestates of a step.
+	// Will be replaced later to not have to load all states
+	GetAllWithStepAndSearchState(step uint8, searchState SearchState) []*GameState
 }
 
 type MetaData struct {
 	CurrentStep uint8
-	Exiting     uint8
+	Exiting     bool
 }
 
 type StateData struct {

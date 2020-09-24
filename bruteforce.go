@@ -16,6 +16,52 @@ type GameInfo struct {
 	getNext       func(*GameState) []*GameState
 }
 
+func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
+	metaData := database.GetMetaData()
+
+	for !*stop {
+		searchState := Unsearched
+		if metaData.Exiting {
+			searchState = Searched
+		}
+
+		states := database.GetAllWithStepAndSearchState(
+			metaData.CurrentStep,
+			searchState,
+		)
+		if len(states) == 0 {
+			if metaData.Exiting {
+				return
+			}
+			metaData.Exiting = true
+			database.UpdateCurrentStep(metaData.CurrentStep, true)
+			continue
+		}
+
+		nextStep := metaData.CurrentStep + 1
+
+		for i := range states {
+			if *stop {
+				return
+			}
+
+			if !metaData.Exiting {
+				gameInfo.search(database, states[i], nextStep)
+			} else {
+				gameInfo.solve(database, states[i], metaData.CurrentStep)
+			}
+		}
+
+		if !metaData.Exiting {
+			metaData.CurrentStep += 1
+		} else {
+			metaData.CurrentStep -= 1
+		}
+
+		database.UpdateCurrentStep(metaData.CurrentStep, metaData.Exiting)
+	}
+}
+
 func (gameInfo *GameInfo) search(
 	database Database,
 	gameState *GameState,
