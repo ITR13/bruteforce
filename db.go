@@ -27,9 +27,8 @@ type Database interface {
 	//Only valid if SearchState was Unsearched and winningPlayer isn't NoPlayer
 	// or everything is the same
 	SetStateEnd(state *GameState, winningPlayer Player)
-	//Should set winner based on values too
 	//Only valid if SearchState was Unsearched or everything is the same
-	SetStateSolved(state *GameState, p1Wins, p2Wins, draw uint8)
+	SetStateSolved(state *GameState, p1Wins, p2Wins, draw uint8, winningPlayer Player)
 	//Only valid in any of the following cases:
 	//  step > currentStep and exiting is false
 	//  step = currentStep and exiting goes from false to true

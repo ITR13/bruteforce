@@ -11,9 +11,10 @@ type Player uint8
 type GameState []byte
 
 type GameInfo struct {
-	game, variant string
-	checkWin      func(*GameState) Player
-	getNext       func(*GameState) []*GameState
+	Game, Variant     string
+	CheckWin          func(state *GameState) Player
+	CheckRecursiveWin func(state *GameState, p1, p2, draw uint8) Player
+	GetNext           func(state *GameState) []*GameState
 }
 
 func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
@@ -67,13 +68,13 @@ func (gameInfo *GameInfo) search(
 	gameState *GameState,
 	nextStep uint8,
 ) {
-	win := gameInfo.checkWin(gameState)
+	win := gameInfo.CheckWin(gameState)
 	if win != NoPlayer {
 		database.SetStateEnd(gameState, win)
 		return
 	}
 
-	nextStates := gameInfo.getNext(gameState)
+	nextStates := gameInfo.GetNext(gameState)
 	for i := range nextStates {
 		database.UpdateSteps(nextStates[i], nextStep)
 	}
@@ -86,7 +87,7 @@ func (gameInfo *GameInfo) solve(
 	gameState *GameState,
 	currentStep uint8,
 ) {
-	nextStates := gameInfo.getNext(gameState)
+	nextStates := gameInfo.GetNext(gameState)
 	p1, p2, draw := uint8(0), uint8(0), uint8(0)
 	err := NoError
 
@@ -113,8 +114,9 @@ func (gameInfo *GameInfo) solve(
 		err = NoEndstate
 		draw = 1
 	}
+	winner := gameInfo.CheckRecursiveWin(gameState, p1, p2, draw)
 
-	database.SetStateSolved(gameState, p1, p2, draw)
+	database.SetStateSolved(gameState, p1, p2, draw, winner)
 	if err != NoError {
 		database.SetError(gameState, err)
 	}
