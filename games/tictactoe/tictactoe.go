@@ -19,6 +19,62 @@ type GameState struct {
 	count uint8
 }
 
+var Lines = [][][3]int{
+	[][3]int{
+		[3]int{0, 1, 2},
+		[3]int{0, 3, 6},
+		[3]int{0, 4, 8},
+	},
+	[][3]int{
+		[3]int{0, 1, 2},
+		[3]int{1, 4, 7},
+	},
+	[][3]int{
+		[3]int{0, 1, 2},
+		[3]int{2, 5, 8},
+		[3]int{2, 4, 6},
+	},
+	[][3]int{
+		[3]int{3, 4, 5},
+		[3]int{0, 3, 6},
+	},
+	[][3]int{
+		[3]int{3, 4, 5},
+		[3]int{1, 4, 7},
+		[3]int{0, 4, 8},
+		[3]int{2, 4, 6},
+	},
+	[][3]int{
+		[3]int{3, 4, 5},
+		[3]int{2, 5, 8},
+	},
+	[][3]int{
+		[3]int{6, 7, 8},
+		[3]int{0, 3, 6},
+		[3]int{2, 4, 6},
+	},
+	[][3]int{
+		[3]int{6, 7, 8},
+		[3]int{1, 4, 7},
+	},
+	[][3]int{
+		[3]int{6, 7, 8},
+		[3]int{2, 5, 8},
+		[3]int{0, 4, 8},
+	},
+	// VictoryChecks
+	[][3]int{
+		[3]int{0, 1, 2},
+		[3]int{3, 4, 5},
+		[3]int{6, 7, 8},
+		[3]int{0, 3, 6},
+		[3]int{1, 4, 7},
+		[3]int{2, 5, 8},
+		[3]int{0, 4, 8},
+		[3]int{2, 4, 6},
+	},
+}
+
 func main() {
 	stop := false
 
@@ -41,7 +97,20 @@ func CheckWin(compressedState *bruteforce.GameState) bruteforce.Player {
 		return bruteforce.NoPlayer
 	}
 
-	// Check win
+	checks := Lines[9]
+	for i := range checks {
+		victory := state.tiles[checks[i][0]]
+		if victory == Empty || victory == Filled {
+			continue
+		}
+		if state.tiles[checks[i][1]] != victory || state.tiles[checks[i][2]] != victory {
+			continue
+		}
+		if victory == Player1 {
+			return bruteforce.Player1
+		}
+		return bruteforce.Player2
+	}
 
 	if state.count == 9 {
 		return bruteforce.BothPlayers
