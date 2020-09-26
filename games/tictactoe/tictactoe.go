@@ -155,6 +155,7 @@ func GetNext(compressedState *bruteforce.GameState) []*bruteforce.GameState {
 			continue
 		}
 		currentNextState := state.place(i, player)
+		findDeadTiles(&currentNextState)
 
 		compressedNextState := compress(currentNextState)
 		nextStates[stateIndex] = &compressedNextState
@@ -206,4 +207,39 @@ func (gameState GameState) place(index int, tile Tile) GameState {
 	newState.tiles[index] = tile
 	newState.count++
 	return newState
+}
+
+func findDeadTiles(gameState *GameState) {
+	tiles := gameState.tiles
+	for tileIndex := range tiles {
+		if tiles[tileIndex] == Empty || tiles[tileIndex] == Filled {
+			continue
+		}
+		tile := tiles[tileIndex]
+
+		anyValid := false
+		for lineIndex := range Lines[tileIndex] {
+			line := Lines[tileIndex][lineIndex]
+			valid := true
+			for i := 0; i < 3; i++ {
+				if tiles[line[i]] == tile {
+					continue
+				}
+				if tiles[line[i]] == Empty {
+					continue
+				}
+				valid = false
+				break
+			}
+
+			if valid {
+				anyValid = true
+				break
+			}
+		}
+
+		if !anyValid {
+			gameState.tiles[tileIndex] = Filled
+		}
+	}
 }
