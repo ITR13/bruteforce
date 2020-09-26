@@ -158,14 +158,15 @@ func GetNext(compressedState *bruteforce.GameState) []bruteforce.StatePath {
 		}
 		currentNextState := state.place(i, player)
 		findDeadTiles(&currentNextState)
-		reorder(&currentNextState)
+		swapped := reorder(&currentNextState)
 
 		compressedNextState := compress(currentNextState)
 		statePaths[stateIndex] = bruteforce.StatePath{
-			&compressedNextState, 1, false,
+			&compressedNextState, 1, swapped,
 		}
 		stateIndex++
 	}
+
 	return statePaths
 }
 
@@ -184,7 +185,7 @@ func decompress(state *bruteforce.GameState) GameState {
 
 	count := uint8(0)
 	for i := range tiles {
-		if tiles[i] != 0 {
+		if tiles[i] != Empty {
 			count++
 		}
 	}
@@ -249,12 +250,15 @@ func findDeadTiles(gameState *GameState) {
 	}
 }
 
-func reorder(gameState *GameState) {
+func reorder(gameState *GameState) (swapped bool) {
 	next := (*gameState).rotate()
+	nextSwap := false
 
 	maybeReplace := func() {
-		if !isLess(*gameState, next) {
+		ok := !isLess(*gameState, next)
+		if ok {
 			*gameState = next
+			swapped = nextSwap
 		}
 	}
 
@@ -272,6 +276,30 @@ func reorder(gameState *GameState) {
 	maybeReplace()
 	next = next.rotate()
 	maybeReplace()
+
+	if next.count%2 != 0 {
+		return
+	}
+
+	nextSwap = true
+	next = next.colorSwap()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+
+	next = next.transpose()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+	return
 }
 
 func (gameState GameState) rotate() GameState {
@@ -290,6 +318,30 @@ func (gameState GameState) transpose() GameState {
 
 	for i := range newState.tiles {
 		newState.tiles[(i%3)*3+i/3] = gameState.tiles[i]
+	}
+
+	return newState
+}
+
+func (gameState GameState) colorSwap() GameState {
+	if gameState.count%2 != 0 {
+		panic("Should not happen, too sleepy to explain why")
+	}
+
+	newState := GameState{}
+	newState.count = gameState.count
+
+	for i := range newState.tiles {
+		switch gameState.tiles[i] {
+		case Player1:
+			newState.tiles[i] = Player2
+			break
+		case Player2:
+			newState.tiles[i] = Player1
+		default:
+			newState.tiles[i] = gameState.tiles[i]
+			break
+		}
 	}
 
 	return newState
