@@ -210,7 +210,7 @@ func (gameState GameState) place(index int, tile Tile) GameState {
 		newState.tiles[i] = gameState.tiles[i]
 	}
 	newState.tiles[index] = tile
-	newState.count++
+	newState.count = gameState.count + 1
 	return newState
 }
 
