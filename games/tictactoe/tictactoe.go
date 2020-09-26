@@ -75,6 +75,8 @@ var Lines = [][][3]int{
 	},
 }
 
+var Rotation = [9]int{2, 5, 8, 1, 4, 7, 0, 3, 6}
+
 func main() {
 	stop := false
 
@@ -156,6 +158,7 @@ func GetNext(compressedState *bruteforce.GameState) []*bruteforce.GameState {
 		}
 		currentNextState := state.place(i, player)
 		findDeadTiles(&currentNextState)
+		reorder(&currentNextState)
 
 		compressedNextState := compress(currentNextState)
 		nextStates[stateIndex] = &compressedNextState
@@ -242,4 +245,62 @@ func findDeadTiles(gameState *GameState) {
 			gameState.tiles[tileIndex] = Filled
 		}
 	}
+}
+
+func reorder(gameState *GameState) {
+	next := (*gameState).rotate()
+
+	maybeReplace := func() {
+		if !isLess(*gameState, next) {
+			*gameState = next
+		}
+	}
+
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+
+	next = next.transpose()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+	next = next.rotate()
+	maybeReplace()
+}
+
+func (gameState GameState) rotate() GameState {
+	newState := GameState{}
+	newState.count = gameState.count
+	for i := range newState.tiles {
+		newState.tiles[i] = gameState.tiles[Rotation[i]]
+	}
+
+	return newState
+}
+
+func (gameState GameState) transpose() GameState {
+	newState := GameState{}
+	newState.count = gameState.count
+
+	for i := range newState.tiles {
+		newState.tiles[(i%3)*3+i/3] = gameState.tiles[i]
+	}
+
+	return newState
+}
+
+func isLess(first, second GameState) bool {
+	for i := range first.tiles {
+		if first.tiles[i] < second.tiles[i] {
+			return true
+		}
+		if first.tiles[i] > second.tiles[i] {
+			return false
+		}
+	}
+	return false
 }
