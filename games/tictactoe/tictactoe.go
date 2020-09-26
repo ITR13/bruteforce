@@ -140,9 +140,10 @@ func CheckRecursiveWin(compressedState *bruteforce.GameState, p1, p2, draw uint8
 	return bruteforce.Player1
 }
 
-func GetNext(compressedState *bruteforce.GameState) []*bruteforce.GameState {
+func GetNext(compressedState *bruteforce.GameState) ([]*bruteforce.GameState, []uint8) {
 	state := decompress(compressedState)
 	nextStates := make([]*bruteforce.GameState, 9-state.count)
+	stepDeltas := make([]uint8, 9-state.count)
 	stateIndex := 0
 
 	var player Tile
@@ -162,9 +163,10 @@ func GetNext(compressedState *bruteforce.GameState) []*bruteforce.GameState {
 
 		compressedNextState := compress(currentNextState)
 		nextStates[stateIndex] = &compressedNextState
+		stepDeltas[stateIndex] = 1
 		stateIndex++
 	}
-	return nextStates
+	return nextStates, stepDeltas
 }
 
 func decompress(state *bruteforce.GameState) GameState {

@@ -14,7 +14,7 @@ type GameInfo struct {
 	Game, Variant     string
 	CheckWin          func(state *GameState) Player
 	CheckRecursiveWin func(state *GameState, p1, p2, draw uint8) Player
-	GetNext           func(state *GameState) []*GameState
+	GetNext           func(state *GameState) ([]*GameState, []uint8)
 }
 
 func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
@@ -45,15 +45,13 @@ func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
 			continue
 		}
 
-		nextStep := metaData.CurrentStep + 1
-
 		for i := range states {
 			if *stop {
 				return
 			}
 
 			if !metaData.Exiting {
-				gameInfo.search(database, states[i], nextStep)
+				gameInfo.search(database, states[i], metaData.CurrentStep)
 			} else {
 				gameInfo.solve(database, states[i], metaData.CurrentStep)
 			}
@@ -75,7 +73,7 @@ func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
 func (gameInfo *GameInfo) search(
 	database Database,
 	gameState *GameState,
-	nextStep uint8,
+	currentStep uint8,
 ) {
 	win := gameInfo.CheckWin(gameState)
 	if win != NoPlayer {
@@ -83,9 +81,9 @@ func (gameInfo *GameInfo) search(
 		return
 	}
 
-	nextStates := gameInfo.GetNext(gameState)
+	nextStates, stepDeltas := gameInfo.GetNext(gameState)
 	for i := range nextStates {
-		database.UpdateSteps(nextStates[i], nextStep)
+		database.UpdateSteps(nextStates[i], currentStep+stepDeltas[i])
 	}
 
 	database.SetStateSearched(gameState)
@@ -96,7 +94,7 @@ func (gameInfo *GameInfo) solve(
 	gameState *GameState,
 	currentStep uint8,
 ) {
-	nextStates := gameInfo.GetNext(gameState)
+	nextStates, _ := gameInfo.GetNext(gameState)
 	p1, p2, draw := uint8(0), uint8(0), uint8(0)
 	err := NoError
 
