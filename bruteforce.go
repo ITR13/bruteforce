@@ -119,13 +119,13 @@ func (gameInfo *GameInfo) solve(
 			err = NoPlayerChildren
 			break
 		case Player1:
-			if statePaths[i].PlayerSwap {
+			if !statePaths[i].PlayerSwap {
 				p1++
 			} else {
 				p2++
 			}
 		case Player2:
-			if statePaths[i].PlayerSwap {
+			if !statePaths[i].PlayerSwap {
 				p2++
 			} else {
 				p1++
