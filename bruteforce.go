@@ -10,11 +10,17 @@ const (
 type Player uint8
 type GameState []byte
 
+type StatePath struct {
+	GameState  *GameState
+	StepDelta  uint8
+	PlayerSwap bool
+}
+
 type GameInfo struct {
 	Game, Variant     string
 	CheckWin          func(state *GameState) Player
 	CheckRecursiveWin func(state *GameState, p1, p2, draw uint8) Player
-	GetNext           func(state *GameState) ([]*GameState, []uint8)
+	GetNext           func(state *GameState) []StatePath
 }
 
 func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
@@ -81,9 +87,12 @@ func (gameInfo *GameInfo) search(
 		return
 	}
 
-	nextStates, stepDeltas := gameInfo.GetNext(gameState)
-	for i := range nextStates {
-		database.UpdateSteps(nextStates[i], currentStep+stepDeltas[i])
+	statePaths := gameInfo.GetNext(gameState)
+	for i := range statePaths {
+		database.UpdateSteps(
+			statePaths[i].GameState,
+			currentStep+statePaths[i].StepDelta,
+		)
 	}
 
 	database.SetStateSearched(gameState)
@@ -94,12 +103,12 @@ func (gameInfo *GameInfo) solve(
 	gameState *GameState,
 	currentStep uint8,
 ) {
-	nextStates, _ := gameInfo.GetNext(gameState)
+	statePaths := gameInfo.GetNext(gameState)
 	p1, p2, draw := uint8(0), uint8(0), uint8(0)
 	err := NoError
 
-	for i := range nextStates {
-		steps, win := database.GetStepsAndWinner(nextStates[i])
+	for i := range statePaths {
+		steps, win := database.GetStepsAndWinner(statePaths[i].GameState)
 		if steps <= currentStep {
 			err = NonLinear
 			continue
@@ -110,9 +119,17 @@ func (gameInfo *GameInfo) solve(
 			err = NoPlayerChildren
 			break
 		case Player1:
-			p1++
+			if statePaths[i].PlayerSwap {
+				p1++
+			} else {
+				p2++
+			}
 		case Player2:
-			p2++
+			if statePaths[i].PlayerSwap {
+				p2++
+			} else {
+				p1++
+			}
 		case BothPlayers:
 			draw++
 		}
