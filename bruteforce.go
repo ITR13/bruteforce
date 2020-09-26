@@ -32,7 +32,13 @@ func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
 		)
 		if len(states) == 0 {
 			if metaData.Exiting {
-				return
+				if metaData.CurrentStep <= 0 {
+					return
+				}
+
+				metaData.CurrentStep -= 1
+				database.UpdateCurrentStep(metaData.CurrentStep, true)
+				continue
 			}
 			metaData.Exiting = true
 			database.UpdateCurrentStep(metaData.CurrentStep, true)
@@ -56,6 +62,9 @@ func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
 		if !metaData.Exiting {
 			metaData.CurrentStep += 1
 		} else {
+			if metaData.CurrentStep == 0 {
+				return
+			}
 			metaData.CurrentStep -= 1
 		}
 
