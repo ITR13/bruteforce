@@ -31,6 +31,7 @@ func main() {
 		CheckWin,
 		CheckRecursiveWin,
 		GetNext,
+		true,
 	}
 	db := ramdb.NewDatabase(false)
 	startState := compress(GameState{

@@ -21,6 +21,8 @@ type GameInfo struct {
 	CheckWin          func(state *GameState) Player
 	CheckRecursiveWin func(state *GameState, p1, p2, draw uint8) Player
 	GetNext           func(state *GameState) []StatePath
+
+	ShallowWinCheck bool
 }
 
 func (gameInfo *GameInfo) RunSingleThreaded(database Database, stop *bool) {
@@ -88,7 +90,21 @@ func (gameInfo *GameInfo) search(
 	}
 
 	statePaths := gameInfo.GetNext(gameState)
+
+	hasShallowWin := false
+	if gameInfo.ShallowWinCheck {
+		for i := range statePaths {
+			if gameInfo.CheckWin(statePaths[i].GameState) != NoPlayer {
+				hasShallowWin = true
+				break
+			}
+		}
+	}
+
 	for i := range statePaths {
+		if hasShallowWin && gameInfo.CheckWin(statePaths[i].GameState) == NoPlayer {
+			continue
+		}
 		database.UpdateSteps(
 			statePaths[i].GameState,
 			currentStep+statePaths[i].StepDelta,
